@@ -123,7 +123,8 @@ test('logout, reload and Back do not expose protected home', async ({
 }) => {
   await page.goto('/login');
   await login(page);
-  await page.getByRole('button', { name: 'Đăng xuất', exact: true }).click();
+  await page.getByRole('button', { name: 'Menu tài khoản' }).click();
+  await page.getByRole('menuitem', { name: 'Đăng xuất', exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);
   expect(
     await page.evaluate(() =>

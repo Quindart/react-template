@@ -1,18 +1,16 @@
-import { LogOut, CircleCheck } from 'lucide-react';
-import { AuthGate } from '~/features/auth/auth-gate';
+import { CircleCheck } from 'lucide-react';
 import { useAuthStore } from '~/features/auth/auth-store';
-import { useLogout } from '~/features/auth/use-logout';
-import { Button } from '~/components/ui/button';
 import { Card, CardContent } from '~/components/ui/card';
 export function meta() {
   return [{ title: 'Trang chủ | Workspace' }];
 }
-function HomeContent() {
+export const handle = { breadcrumb: 'Trang chủ' };
+
+export default function Home() {
   const user = useAuthStore((state) => state.user);
-  const { logout, isPending } = useLogout();
   return (
-    <main className="flex min-h-svh items-center justify-center bg-muted p-6">
-      <Card className="w-full max-w-lg">
+    <section aria-label="Trang chủ" className="w-full">
+      <Card className="w-full max-w-2xl">
         <CardContent className="space-y-6 p-8">
           <CircleCheck
             aria-hidden="true"
@@ -29,24 +27,8 @@ function HomeContent() {
               Bạn đã đăng nhập thành công. Chúc bạn một ngày làm việc hiệu quả.
             </p>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={logout}
-            disabled={isPending}
-          >
-            <LogOut aria-hidden="true" />
-            Đăng xuất
-          </Button>
         </CardContent>
       </Card>
-    </main>
-  );
-}
-export default function Home() {
-  return (
-    <AuthGate>
-      <HomeContent />
-    </AuthGate>
+    </section>
   );
 }
