@@ -113,4 +113,4 @@ Khi thất bại, lưu screenshot, trace và báo cáo HTML phục vụ điều 
 
 ## Trạng thái duyệt
 
-Thiết kế ban đầu trong hội thoại đã được duyệt. Đã bổ sung yêu cầu Playwright E2E, progress bar và thông điệp của login action, Prettier và lint theo phản hồi người dùng. Bản spec cập nhật chờ người dùng duyệt trước khi viết kế hoạch triển khai theo workflow brainstorming.
+Người dùng đã duyệt bản spec bổ sung Playwright E2E, progress bar, thông điệp login action, Prettier và lint trong hội thoại ngày 2026-10-03. Chuyển sang lập kế hoạch triển khai.
