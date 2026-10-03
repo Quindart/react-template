@@ -1,5 +1,5 @@
-import { z } from "zod";
-import { AUTH_MESSAGES } from "./auth-messages";
+import { z } from 'zod';
+import { AUTH_MESSAGES } from './auth-messages';
 
 export const loginSchema = z.object({
   username: z.string().trim().min(1, AUTH_MESSAGES.usernameRequired),

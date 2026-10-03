@@ -85,3 +85,6 @@ This template comes with [Tailwind CSS](https://tailwindcss.com/) already config
 ---
 
 Built with ❤️ using React Router.
+
+Login UI adapts the official [shadcn login-04 block](https://ui.shadcn.com/blocks/login), with Button, Input, Label and Card from the [new-york registry](https://ui.shadcn.com/r/styles/new-york/button.json). Imports use the existing `~/` alias and Tailwind 4 theme.
+# react-template

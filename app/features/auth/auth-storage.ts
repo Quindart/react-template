@@ -1,4 +1,4 @@
-import type { StateStorage } from "zustand/middleware";
+import type { StateStorage } from 'zustand/middleware';
 
 export interface SafeStorage extends StateStorage {
   readonly storageError: boolean;

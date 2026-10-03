@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { useAuthStore } from "./auth-store";
+import { useEffect } from 'react';
+import { useAuthStore } from './auth-store';
 
 export function SessionBootstrap() {
   useEffect(() => {

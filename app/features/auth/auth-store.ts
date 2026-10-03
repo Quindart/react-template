@@ -1,8 +1,8 @@
-import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
-import type { PersistStorage, StateStorage } from "zustand/middleware";
-import type { AuthUser } from "./auth-service";
-import { createSafeStorage } from "./auth-storage";
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+import type { PersistStorage, StateStorage } from 'zustand/middleware';
+import type { AuthUser } from './auth-service';
+import { createSafeStorage } from './auth-storage';
 
 type PersistedSession = { user: AuthUser | null };
 type PersistenceResult = { persisted: boolean };
@@ -17,9 +17,11 @@ export interface AuthState {
 }
 
 function allowedUser(value: unknown): AuthUser | null {
-  return typeof value === "object" && value !== null &&
-    "username" in value && value.username === "admin"
-    ? { username: "admin" }
+  return typeof value === 'object' &&
+    value !== null &&
+    'username' in value &&
+    value.username === 'admin'
+    ? { username: 'admin' }
     : null;
 }
 
@@ -30,15 +32,21 @@ export function createAuthStore(storage: StateStorage) {
   let hydration: Promise<void> | undefined;
   const jsonStorage = createJSONStorage<PersistedSession>(() => storage)!;
   const storageUnavailable = () =>
-    "storageError" in storage && storage.storageError === true;
+    'storageError' in storage && storage.storageError === true;
 
   // Check the complete envelope before Zustand considers version migration.
   // A stored session can supply only an allowlisted user, never actions/status.
   const validateSession = (value: unknown) => {
-    if (typeof value !== "object" || value === null ||
-      !("version" in value) || value.version !== 1 ||
-      !("state" in value) || typeof value.state !== "object" ||
-      value.state === null || !("user" in value.state)) {
+    if (
+      typeof value !== 'object' ||
+      value === null ||
+      !('version' in value) ||
+      value.version !== 1 ||
+      !('state' in value) ||
+      typeof value.state !== 'object' ||
+      value.state === null ||
+      !('user' in value.state)
+    ) {
       return { state: { user: null }, version: 1 };
     }
     return { state: { user: allowedUser(value.state.user) }, version: 1 };
@@ -86,7 +94,9 @@ export function createAuthStore(storage: StateStorage) {
         hydrate() {
           hydration ??= Promise.resolve()
             .then(() => persistApi.persist.rehydrate())
-            .catch(() => { readFailed = true; })
+            .catch(() => {
+              readFailed = true;
+            })
             .then(() => {
               updateStatus({
                 hydrated: true,
@@ -97,7 +107,7 @@ export function createAuthStore(storage: StateStorage) {
         },
       }),
       {
-        name: "auth-session",
+        name: 'auth-session',
         version: 1,
         storage: persistStorage,
         skipHydration: true,
