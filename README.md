@@ -52,6 +52,18 @@ as `.xlsx`, preserving phone numbers as text. The export library loads on demand
 Fixtures and query/export helpers live in `app/features/users/`.
 Run `pnpm test` for unit tests and `pnpm build && pnpm test:e2e` for browser tests.
 
+### Business chatbot demo
+
+Use the bottom-right chatbot button on any workspace page. The drawer uses a
+quarter of the desktop viewport (minimum 360px) and the full width on mobile.
+Choose a suggested question or type a message about revenue, orders, or returning
+customers. Replies use the existing dashboard fixtures and are explicitly simulated.
+
+Enter sends a message; Shift+Enter adds a new line. Attachments can be selected,
+removed, and sent, but only their names and sizes are retained locally: no files
+are uploaded or analyzed. Conversation and draft state survive closing/reopening
+and workspace navigation; reload or logout clears them.
+
 ## Building for Production
 
 Create a production build:
