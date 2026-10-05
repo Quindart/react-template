@@ -34,6 +34,24 @@ npm run dev
 
 Your application will be available at `http://localhost:5173`.
 
+### User management demo
+
+After signing in, open **Quản lý người dùng** in the sidebar or visit `/users`.
+The table contains 100 deterministic fake users. Submit the search form to filter
+by name (with or without Vietnamese accents), phone, email, or user ID.
+
+- `/users?search_key=nguyen`
+- `/users?page=2&limit=10`
+- `/users?page=1&limit=5&search_key=123`
+
+Page sizes are 5, 10, 20, and 50. Search and page-size changes reset to page 1;
+reload and browser Back/Forward restore the URL state. Invalid page/limit values
+are normalized. **Xuất Excel** downloads all matching users across every page
+as `.xlsx`, preserving phone numbers as text. The export library loads on demand.
+
+Fixtures and query/export helpers live in `app/features/users/`.
+Run `pnpm test` for unit tests and `pnpm build && pnpm test:e2e` for browser tests.
+
 ## Building for Production
 
 Create a production build:
