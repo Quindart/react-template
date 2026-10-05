@@ -3,7 +3,8 @@ export type UserRecord = {
   name: string;
   phone: string;
   email: string;
-  role: 'Quản trị viên' | 'Biên tập viên' | 'Thành viên';
+  role: 'Quản trị viên' | 'Biên tập viên' | 'Thành viên' | 'Nhân viên';
+  username?: 'employee';
   status: 'Hoạt động' | 'Tạm khóa';
 };
 
@@ -49,3 +50,16 @@ export const mockUsers: UserRecord[] = Array.from(
     status: index % 7 === 6 ? 'Tạm khóa' : 'Hoạt động',
   }),
 );
+
+export const directoryUsers: UserRecord[] = [
+  {
+    id: 'EMP-001',
+    username: 'employee',
+    name: 'employee',
+    phone: '—',
+    email: 'employee@example.com',
+    role: 'Nhân viên',
+    status: 'Hoạt động',
+  },
+  ...mockUsers,
+];

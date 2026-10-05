@@ -16,7 +16,7 @@ test('search, pagination and browser history stay synchronized with the URL', as
   await expect(page.locator('tbody tr')).toHaveCount(10);
   await page.getByRole('button', { name: 'Trang sau', exact: true }).click();
   await expect(page).toHaveURL(/page=2&limit=10/);
-  await expect(page.locator('tbody tr').first()).toContainText('USR-011');
+  await expect(page.locator('tbody tr').first()).toContainText('USR-010');
   await page
     .getByRole('searchbox', { name: 'Tìm kiếm người dùng' })
     .fill('nguyen');

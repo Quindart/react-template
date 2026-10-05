@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from 'react-router';
 import { useSnackbar } from 'notistack';
 import { loginSchema, type LoginValues } from './login-schema';
-import { authenticate } from './auth-service';
+import { authenticate, InactiveAccountError } from './auth-service';
 import { useAuthStore } from './auth-store';
 import { AUTH_MESSAGES } from './auth-messages';
 
@@ -64,8 +64,12 @@ export function useLogin() {
       let user;
       try {
         user = await authenticate(values);
-      } catch {
-        showError(AUTH_MESSAGES.loginError);
+      } catch (error) {
+        showError(
+          error instanceof InactiveAccountError
+            ? AUTH_MESSAGES.inactiveAccount
+            : AUTH_MESSAGES.loginError,
+        );
         return;
       }
       if (!user) {
@@ -79,7 +83,7 @@ export function useLogin() {
       const { persisted } = useAuthStore.getState().signIn(user);
       enqueueSnackbar(
         persisted
-          ? AUTH_MESSAGES.loginSuccess
+          ? `Đăng nhập thành công. Chào mừng ${user.username}!`
           : AUTH_MESSAGES.persistenceWarning,
         {
           variant: persisted ? 'success' : 'warning',

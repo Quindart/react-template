@@ -1,4 +1,4 @@
-import { mockUsers } from './user-data';
+import { directoryUsers } from './user-data';
 
 export const pageSizes = [5, 10, 20, 50];
 
@@ -16,7 +16,7 @@ export function queryUsers(params: URLSearchParams) {
   const searchKey = (params.get('search_key') ?? '').trim();
   const key = normalize(searchKey);
   const phoneKey = key.replace(/[\s().+-]/g, '');
-  const filtered = mockUsers.filter(
+  const filtered = directoryUsers.filter(
     (user) =>
       [user.name, user.email, user.id].some((value) =>
         normalize(value).includes(key),

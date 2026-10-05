@@ -36,6 +36,14 @@ describe('login schema', () => {
 });
 
 describe('authenticate', () => {
+  it('allows the employee demo account to sign in', async () => {
+    expect(
+      await authenticate({
+        username: 'employee',
+        password: 'employee123456Aa@',
+      }),
+    ).toEqual({ username: 'employee' });
+  });
   it('returns the demo user for exact credentials', async () => {
     expect(
       await authenticate({ username: 'admin', password: 'admin123456Aa@' }),

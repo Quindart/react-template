@@ -3,15 +3,15 @@ import { mockUsers } from '~/features/users/user-data';
 import { queryUsers } from '~/features/users/user-query';
 
 describe('user directory query', () => {
-  it('paginates 100 distinct users without duplicates between pages', () => {
+  it('paginates employee and 100 demo users without duplicates between pages', () => {
     const first = queryUsers(new URLSearchParams());
     const second = queryUsers(new URLSearchParams('page=2&limit=10'));
-    expect(first.total).toBe(100);
+    expect(first.total).toBe(101);
     expect(new Set(mockUsers.map((user) => user.id)).size).toBe(100);
     expect(first.rows).toHaveLength(10);
     expect(second.rows).toHaveLength(10);
-    expect(first.rows[0].id).toBe('USR-001');
-    expect(second.rows[0].id).toBe('USR-011');
+    expect(first.rows[0].username).toBe('employee');
+    expect(second.rows[0].id).toBe('USR-010');
   });
 
   it.each([
@@ -21,6 +21,7 @@ describe('user directory query', () => {
     ['user001@example.com', 1],
     ['090 000 0001', 1],
     ['not-a-real-user', 0],
+    ['employee', 1],
   ])('searches names, email and phone: %s', (key, count) => {
     const result = queryUsers(new URLSearchParams({ search_key: key }));
     expect(result.total).toBe(count);
@@ -53,7 +54,7 @@ describe('user directory query', () => {
   });
 
   it('clamps pages after filtering, including empty results', () => {
-    expect(queryUsers(new URLSearchParams('page=999&limit=5')).page).toBe(20);
+    expect(queryUsers(new URLSearchParams('page=999&limit=5')).page).toBe(21);
     const empty = queryUsers(
       new URLSearchParams('page=999&search_key=missing-user'),
     );

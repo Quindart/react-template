@@ -20,8 +20,8 @@ function allowedUser(value: unknown): AuthUser | null {
   return typeof value === 'object' &&
     value !== null &&
     'username' in value &&
-    value.username === 'admin'
-    ? { username: 'admin' }
+    (value.username === 'admin' || value.username === 'employee')
+    ? { username: value.username }
     : null;
 }
 

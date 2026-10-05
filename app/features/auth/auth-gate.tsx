@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
-import { Navigate } from 'react-router';
+import { Navigate, useMatches } from 'react-router';
 import { useAuthStore } from './auth-store';
-
+import { canAccess, subjectFor } from './access-policy';
+import { useEmployeeAccountStore } from './employee-account-store';
 
 export function SessionPending() {
   return (
@@ -13,7 +14,20 @@ export function SessionPending() {
 export function AuthGate({ children }: { children: ReactNode }) {
   const hydrated = useAuthStore((state) => state.hydrated);
   const user = useAuthStore((state) => state.user);
+  const active = useEmployeeAccountStore((state) => state.active);
+  const matches = useMatches();
+  const requiresUsers = matches.some(
+    ({ handle }) =>
+      typeof handle === 'object' &&
+      handle !== null &&
+      'accessResource' in handle &&
+      handle.accessResource === 'users',
+  );
+  const subject = subjectFor(user, active);
   if (!hydrated) return <SessionPending />;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!canAccess(subject, 'home')) return <Navigate to="/login" replace />;
+  if (requiresUsers && !canAccess(subject, 'users')) {
+    return <Navigate to="/home" replace />;
+  }
   return children;
 }

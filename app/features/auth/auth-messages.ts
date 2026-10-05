@@ -6,6 +6,7 @@ export const AUTH_MESSAGES = {
     'Tên đăng nhập hoặc mật khẩu không đúng. Vui lòng thử lại.',
   loginSuccess: 'Đăng nhập thành công. Chào mừng admin!',
   loginError: 'Không thể đăng nhập lúc này. Vui lòng thử lại.',
+  inactiveAccount: 'Tài khoản đã bị vô hiệu hóa. Vui lòng liên hệ admin.',
   persistenceWarning:
     'Đăng nhập thành công, nhưng không thể lưu phiên. Bạn có thể cần đăng nhập lại khi tải lại trang.',
   navigationError:

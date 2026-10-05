@@ -21,13 +21,18 @@ import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
 import { pageSizes, queryUsers } from '~/features/users/user-query';
 import { UserTable } from '~/features/users/user-table';
+import { directoryUsers, type UserRecord } from '~/features/users/user-data';
+import { useEmployeeAccountStore } from '~/features/auth/employee-account-store';
 import type { Route } from './+types/users';
 
 export function meta() {
   return [{ title: 'Quản lý người dùng | Workspace' }];
 }
 
-export const handle = { breadcrumb: 'Quản lý người dùng' };
+export const handle = {
+  breadcrumb: 'Quản lý người dùng',
+  accessResource: 'users',
+};
 
 export function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
@@ -52,6 +57,12 @@ export function loader({ request }: Route.LoaderArgs) {
 export default function UsersPage({ loaderData }: Route.ComponentProps) {
   const { rows, filtered, total, page, limit, pageCount, searchKey } =
     loaderData;
+  const employeeActive = useEmployeeAccountStore((state) => state.active);
+  function withAccountStatus(user: UserRecord): UserRecord {
+    return user.username === 'employee'
+      ? { ...user, status: employeeActive ? 'Hoạt động' : 'Tạm khóa' }
+      : user;
+  }
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const navigation = useNavigation();
@@ -77,7 +88,7 @@ export default function UsersPage({ loaderData }: Route.ComponentProps) {
     setExportError('');
     try {
       const { exportUsers } = await import('~/features/users/export-users');
-      await exportUsers(filtered);
+      await exportUsers(filtered.map(withAccountStatus));
     } catch {
       setExportError('Không thể xuất Excel. Vui lòng thử lại.');
     } finally {
@@ -109,7 +120,7 @@ export default function UsersPage({ loaderData }: Route.ComponentProps) {
           </p>
         </div>
         <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-800">
-          100 người dùng · Dữ liệu mẫu
+          {directoryUsers.length} người dùng · Dữ liệu mẫu
         </span>
       </div>
 
@@ -196,7 +207,7 @@ export default function UsersPage({ loaderData }: Route.ComponentProps) {
         </Form>
 
         <div aria-busy={pending} className={pending ? 'opacity-60' : ''}>
-          <UserTable users={rows} />
+          <UserTable users={rows.map(withAccountStatus)} />
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-4 border-t p-5">

@@ -27,7 +27,9 @@ it('hydrates the session in StrictMode without gating children or repeating noti
   expect(screen.getByText('content')).toBeInTheDocument();
   await waitFor(() => expect(useAuthStore.getState().hydrated).toBe(true));
   expect(useAuthStore.getState().user).toEqual({ username: 'admin' });
-  expect(getItem).toHaveBeenCalledTimes(1);
+  expect(
+    getItem.mock.calls.filter(([key]) => key === 'auth-session'),
+  ).toHaveLength(1);
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 });
 

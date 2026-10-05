@@ -16,9 +16,11 @@ const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
   enqueueSnackbar: vi.fn(),
 }));
-vi.mock('~/features/auth/auth-service', () => ({
-  authenticate: mocks.authenticate,
-}));
+vi.mock('~/features/auth/auth-service', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('~/features/auth/auth-service')>();
+  return { ...actual, authenticate: mocks.authenticate };
+});
 vi.mock('react-router', () => ({ useNavigate: () => mocks.navigate }));
 vi.mock('notistack', () => ({
   useSnackbar: () => ({ enqueueSnackbar: mocks.enqueueSnackbar }),

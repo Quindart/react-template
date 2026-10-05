@@ -36,8 +36,27 @@ Your application will be available at `http://localhost:5173`.
 
 ### User management demo
 
+Demo login accounts:
+
+| Username | Password | Access |
+| --- | --- | --- |
+| `admin` | `admin123456Aa@` | Home, Users, activate/deactivate employee |
+| `employee` | `employee123456Aa@` | Home only |
+
+The ABAC policy checks the account's role and active status against the requested
+resource and action. Employee cannot see the Users menu or open `/users` directly.
+Admin can activate/deactivate employee using the button in the **Action** column
+of its row on `/users`. A modal asks for confirmation before changing the account
+status; canceling leaves the status unchanged. The row updates after confirmation.
+Disabled accounts cannot sign in; existing employee sessions in this browser
+are revoked, including other open tabs. Account status is saved in localStorage.
+
+Authentication and permissions are a browser-only demo, not server authorization.
+Account status is local to each browser; a production app needs server-side account
+storage, authentication and authorization on every protected loader/API.
+
 After signing in, open **Quản lý người dùng** in the sidebar or visit `/users`.
-The table contains 100 deterministic fake users. Submit the search form to filter
+The table contains the employee login account and 100 deterministic fake users. Submit the search form to filter
 by name (with or without Vietnamese accents), phone, email, or user ID.
 
 - `/users?search_key=nguyen`

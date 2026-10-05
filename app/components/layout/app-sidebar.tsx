@@ -1,5 +1,8 @@
 import { Home, PanelsTopLeft, Users } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router';
+import { useAuthStore } from '~/features/auth/auth-store';
+import { useEmployeeAccountStore } from '~/features/auth/employee-account-store';
+import { canAccess, subjectFor } from '~/features/auth/access-policy';
 import {
   Sidebar,
   SidebarContent,
@@ -17,6 +20,9 @@ import {
 export function AppSidebar() {
   const { pathname } = useLocation();
   const { setOpenMobile } = useSidebar();
+  const user = useAuthStore((state) => state.user);
+  const active = useEmployeeAccountStore((state) => state.active);
+  const showUsers = canAccess(subjectFor(user, active), 'users');
 
   return (
     <Sidebar collapsible="icon">
@@ -56,18 +62,20 @@ export function AppSidebar() {
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === '/users'}
-                    tooltip="Quản lý người dùng"
-                  >
-                    <NavLink to="/users" onClick={() => setOpenMobile(false)}>
-                      <Users aria-hidden="true" />
-                      <span>Quản lý người dùng</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {showUsers && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === '/users'}
+                      tooltip="Quản lý người dùng"
+                    >
+                      <NavLink to="/users" onClick={() => setOpenMobile(false)}>
+                        <Users aria-hidden="true" />
+                        <span>Quản lý người dùng</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
               </SidebarMenu>
             </nav>
           </SidebarGroupContent>

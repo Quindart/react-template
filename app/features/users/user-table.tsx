@@ -1,5 +1,6 @@
 import { SearchX } from 'lucide-react';
 import type { UserRecord } from './user-data';
+import { EmployeeAccountAction } from './employee-account-action';
 
 export function UserTable({ users }: { users: UserRecord[] }) {
   return (
@@ -20,6 +21,7 @@ export function UserTable({ users }: { users: UserRecord[] }) {
               'Email',
               'Vai trò',
               'Trạng thái',
+              'Action',
             ].map((label) => (
               <th key={label} scope="col" className="px-5 py-3.5 font-medium">
                 {label}
@@ -66,11 +68,18 @@ export function UserTable({ users }: { users: UserRecord[] }) {
                   {user.status}
                 </span>
               </td>
+              <td className="whitespace-nowrap px-5 py-4">
+                {user.username === 'employee' ? (
+                  <EmployeeAccountAction />
+                ) : (
+                  <span className="text-muted-foreground">—</span>
+                )}
+              </td>
             </tr>
           ))}
           {!users.length && (
             <tr>
-              <td colSpan={6} className="px-5 py-16 text-center">
+              <td colSpan={7} className="px-5 py-16 text-center">
                 <SearchX
                   aria-hidden="true"
                   className="mx-auto mb-3 size-8 text-muted-foreground"
