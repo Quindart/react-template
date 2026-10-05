@@ -3,6 +3,7 @@ import { AuthGate } from '~/features/auth/auth-gate';
 import { AppSidebar } from '~/components/layout/app-sidebar';
 import { AppHeader } from '~/components/layout/app-header';
 import { SidebarInset, SidebarProvider } from '~/components/ui/sidebar';
+import { BusinessChatbot } from '~/features/chatbot/business-chatbot';
 
 export default function Workspace() {
   return (
@@ -15,6 +16,7 @@ export default function Workspace() {
             <Outlet />
           </div>
         </SidebarInset>
+        <BusinessChatbot />
       </SidebarProvider>
     </AuthGate>
   );
