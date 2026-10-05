@@ -1,4 +1,4 @@
-import { Home, PanelsTopLeft } from 'lucide-react';
+import { Home, PanelsTopLeft, Users } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router';
 import {
   Sidebar,
@@ -53,6 +53,18 @@ export function AppSidebar() {
                     >
                       <Home aria-hidden="true" />
                       <span>Trang chủ</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === '/users'}
+                    tooltip="Quản lý người dùng"
+                  >
+                    <NavLink to="/users" onClick={() => setOpenMobile(false)}>
+                      <Users aria-hidden="true" />
+                      <span>Quản lý người dùng</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
