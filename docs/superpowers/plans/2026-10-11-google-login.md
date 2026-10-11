@@ -215,15 +215,15 @@
 - Environment values: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, and `AUTH_SESSION_SECRET`.
 - Local callback URI: `http://localhost:5173/auth/google/callback`.
 
-- [ ] **Step 1: Document the required Google Cloud setup**
+- [x] **Step 1: Document the required Google Cloud setup**
 
   Explain how to create a Web OAuth client, register localhost and deployed callback URLs, configure the consent screen and test users where applicable, copy `.env.example` to `.env`, and keep secrets out of source control. State that runtime Google login requires user-supplied Google Cloud credentials.
 
-- [ ] **Step 2: Add `.env.example`**
+- [x] **Step 2: Add `.env.example`**
 
   Include placeholder values only, no real credentials, and retain `.env` in `.gitignore`.
 
-- [ ] **Step 3: Confirm the end-to-end setup instructions**
+- [x] **Step 3: Confirm the end-to-end setup instructions**
 
   Review the documented redirect URI, scope, environment names, OAuth test setup, and known prototype authorization limitation against the implementation and spec.
 
