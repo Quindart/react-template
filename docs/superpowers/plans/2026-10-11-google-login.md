@@ -229,7 +229,7 @@
 
 ### Final review
 
-- [ ] Review all changed files against the spec, especially session precedence, error redaction, and the client-side authorization limitation.
-- [ ] Confirm no OAuth token, client secret, or raw provider error is stored or rendered in the browser.
-- [ ] Confirm missing credentials produce a safe login error and do not break the demo login flow.
-- [ ] Run `pnpm typecheck`, `pnpm test`, `pnpm build`, and `pnpm test:e2e`; report any checks that cannot run because Google Cloud credentials are unavailable. Automated tests must mock Google and must not require a real Google account.
+- [x] Review all changed files against the spec, especially session precedence, error redaction, and the client-side authorization limitation.
+- [x] Confirm no OAuth token, client secret, or raw provider error is stored or rendered in the browser.
+- [x] Confirm missing credentials produce a safe login error and do not break the demo login flow.
+- [x] Run `pnpm typecheck`, `pnpm test`, `pnpm build`, and `pnpm test:e2e`; report any checks that cannot run because Google Cloud credentials are unavailable. Automated tests must mock Google and must not require a real Google account.
