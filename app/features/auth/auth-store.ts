@@ -107,9 +107,13 @@ export function createAuthStore(storage: StateStorage) {
         },
         finishHydration(googleUser) {
           const localUser = get().user;
-          const user = allowedUser(googleUser) ??
-            (localUser?.kind === 'demo' ? localUser : null);
-          persistSet({ user, hydrated: true });
+          const serverUser = allowedUser(googleUser);
+          const user = serverUser ?? (localUser?.kind === 'demo' ? localUser : null);
+          if (serverUser || localUser?.kind === 'google') {
+            persistSet({ user, hydrated: true });
+          } else {
+            set({ user, hydrated: true });
+          }
           updateStatus({ storageError: readFailed || !lastPersisted || storageUnavailable() });
         },
         hydrate() {

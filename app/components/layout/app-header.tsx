@@ -84,9 +84,14 @@ export function AppHeader() {
             <p className="text-xs font-normal text-muted-foreground">
               Tài khoản
             </p>
-            <p className="truncate">
-              {user?.kind === 'google' ? user.name || user.email : user?.username}
-            </p>
+            {user?.kind === 'google' ? (
+              <>
+                <p className="truncate">{user.name || user.email}</p>
+                {user.name && <p className="truncate text-xs font-normal text-muted-foreground">{user.email}</p>}
+              </>
+            ) : (
+              <p className="truncate">{user?.username}</p>
+            )}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem

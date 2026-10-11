@@ -1,6 +1,6 @@
 // Adapted from official shadcn login-04: https://ui.shadcn.com/blocks/login
 import { useState } from 'react';
-import { Navigate } from 'react-router';
+import { Link, Navigate, useSearchParams } from 'react-router';
 import {
   Eye,
   EyeOff,
@@ -24,8 +24,10 @@ export function LoginForm() {
     useLogin();
   const user = useAuthStore((state) => state.user);
   const hydrated = useAuthStore((state) => state.hydrated);
+  const [searchParams] = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const busy = phase !== 'idle';
+  const googleError = searchParams.get('auth_error') === 'google';
   const { errors } = form.formState;
   if (!hydrated) return <SessionPending />;
   if (user && !busy && !navigationError) return <Navigate to="/home" replace />;
@@ -137,14 +139,37 @@ export function LoginForm() {
                   </p>
                 )}
               </div>
-              {errorMessage && (
+              {(errorMessage || googleError) && (
                 <p
                   role="alert"
                   className="rounded-lg bg-red-50 p-3 text-sm leading-6 text-red-700"
                 >
-                  {errorMessage}
+                  {errorMessage || AUTH_MESSAGES.googleLoginError}
                 </p>
               )}
+              <div className="relative flex items-center gap-3 text-xs text-muted-foreground before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
+                <span>hoặc</span>
+              </div>
+              <Button
+                asChild
+                variant="outline"
+                className="h-12 w-full aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+                aria-disabled={busy}
+              >
+                <Link
+                  to="/auth/google"
+                  aria-label="Tiếp tục với Google"
+                  tabIndex={busy ? -1 : undefined}
+                  onClick={(event) => { if (busy) event.preventDefault(); }}
+                >
+                  {busy ? (
+                    <LoaderCircle aria-hidden="true" className="motion-safe:animate-spin" />
+                  ) : (
+                    <span aria-hidden="true" className="font-bold text-blue-600">G</span>
+                  )}
+                  {busy ? 'Đang chuẩn bị Google…' : 'Tiếp tục với Google'}
+                </Link>
+              </Button>
               {navigationError ? (
                 <Button
                   type="button"

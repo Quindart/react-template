@@ -183,23 +183,23 @@
 - The login route maps the safe `auth_error=google` query value to a Vietnamese retryable error; never render arbitrary query strings.
 - The account menu shows a Google user's name and email; demo accounts continue to show their usernames.
 
-- [ ] **Step 1: Add Google login UI behavior checks**
+- [x] **Step 1: Add Google login UI behavior checks**
 
   Extend `tests/e2e/auth.spec.ts` to verify the existing demo login still renders and works, the Google button is keyboard accessible and targets `/auth/google`, and the known `auth_error=google` value shows the generic error. OAuth callback success and failure are covered by the route tests from Task 2; do not require a real Google account in automated tests.
 
-- [ ] **Step 2: Add safe Google error messages**
+- [x] **Step 2: Add safe Google error messages**
 
   Add a single generic login message for Google provider/configuration/callback failures and map only the known `auth_error=google` value.
 
-- [ ] **Step 3: Add the Google action to `LoginForm`**
+- [x] **Step 3: Add the Google action to `LoginForm`**
 
   Add a divider and provider button below the current submit button. Preserve the current field validation, submit messages, card layout, and mobile behavior.
 
-- [ ] **Step 4: Render the authenticated identity in the account menu**
+- [x] **Step 4: Render the authenticated identity in the account menu**
 
   Show `name` and `email` for Google users and the existing username for demo accounts; keep a neutral avatar fallback.
 
-- [ ] **Step 5: Run focused login E2E checks**
+- [x] **Step 5: Run focused login E2E checks**
 
   Run: `pnpm test:e2e -- tests/e2e/auth.spec.ts`
 

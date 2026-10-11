@@ -7,6 +7,7 @@ export const AUTH_MESSAGES = {
   loginSuccess: 'Đăng nhập thành công. Chào mừng admin!',
   loginError: 'Không thể đăng nhập lúc này. Vui lòng thử lại.',
   logoutError: 'Chưa thể đăng xuất. Vui lòng kiểm tra kết nối và thử lại.',
+  googleLoginError: 'Không thể đăng nhập bằng Google lúc này. Vui lòng thử lại.',
   inactiveAccount: 'Tài khoản đã bị vô hiệu hóa. Vui lòng liên hệ admin.',
   persistenceWarning:
     'Đăng nhập thành công, nhưng không thể lưu phiên. Bạn có thể cần đăng nhập lại khi tải lại trang.',
