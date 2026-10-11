@@ -78,6 +78,18 @@ export function useLogin() {
         showError(AUTH_MESSAGES.invalidCredentials);
         return;
       }
+      try {
+        const response = await fetch('/auth/session', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ intent: 'clear' }),
+        });
+        if (!response.ok) throw new Error('Could not clear server session');
+      } catch {
+        showError(AUTH_MESSAGES.loginError);
+        return;
+      }
       // Mark navigation ownership before publishing the user to route guards.
       setPhase('redirecting');
       const { persisted } = useAuthStore.getState().signIn(user);

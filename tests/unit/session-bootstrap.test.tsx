@@ -7,6 +7,7 @@ import { LoginProgress } from '~/features/auth/login-progress';
 import { AppProviders } from '~/providers/app-providers';
 
 beforeEach(() => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ user: null })));
   localStorage.clear();
   useAuthStore.setState({ user: null, hydrated: false, storageError: false });
 });
@@ -26,11 +27,25 @@ it('hydrates the session in StrictMode without gating children or repeating noti
   );
   expect(screen.getByText('content')).toBeInTheDocument();
   await waitFor(() => expect(useAuthStore.getState().hydrated).toBe(true));
-  expect(useAuthStore.getState().user).toEqual({ username: 'admin' });
+  expect(useAuthStore.getState().user).toEqual({ kind: 'demo', username: 'admin' });
   expect(
     getItem.mock.calls.filter(([key]) => key === 'auth-session'),
   ).toHaveLength(1);
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+});
+
+it('gives the server Google identity precedence over a persisted demo user', async () => {
+  localStorage.setItem('auth-session', JSON.stringify({
+    state: { user: { username: 'admin' } }, version: 1,
+  }));
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({
+    user: { kind: 'google', subject: 'google-subject', email: 'person@example.com', name: 'Person' },
+  })));
+  render(<AppProviders><p>content</p></AppProviders>);
+  await waitFor(() => expect(useAuthStore.getState().hydrated).toBe(true));
+  expect(useAuthStore.getState().user).toEqual({
+    kind: 'google', subject: 'google-subject', email: 'person@example.com', name: 'Person',
+  });
 });
 
 it('provides a keyboard-accessible snackbar close action', async () => {

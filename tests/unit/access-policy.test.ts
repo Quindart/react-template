@@ -16,15 +16,17 @@ beforeEach(() => {
 });
 
 it('enforces role, account status, resource and action together', () => {
-  const admin = subjectFor({ username: 'admin' }, false);
-  const employee = subjectFor({ username: 'employee' }, true);
+  const admin = subjectFor({ kind: 'demo', username: 'admin' }, false);
+  const employee = subjectFor({ kind: 'demo', username: 'employee' }, true);
   expect(canAccess(admin, 'home')).toBe(true);
   expect(canAccess(admin, 'users')).toBe(true);
   expect(canAccess(admin, 'employee-account', 'update')).toBe(true);
   expect(canAccess(employee, 'home')).toBe(true);
   expect(canAccess(employee, 'users')).toBe(false);
+  expect(canAccess(subjectFor({ kind: 'google', subject: 's', email: 'e@example.com', name: null }, false), 'home')).toBe(true);
+  expect(canAccess(subjectFor({ kind: 'google', subject: 's', email: 'e@example.com', name: null }, false), 'users')).toBe(false);
   expect(canAccess(employee, 'employee-account', 'update')).toBe(false);
-  expect(canAccess(subjectFor({ username: 'employee' }, false), 'home')).toBe(
+  expect(canAccess(subjectFor({ kind: 'demo', username: 'employee' }, false), 'home')).toBe(
     false,
   );
   expect(canAccess(null, 'home')).toBe(false);
@@ -33,7 +35,7 @@ it('enforces role, account status, resource and action together', () => {
 it('prevents employee and anonymous account mutations', () => {
   const account = useEmployeeAccountStore.getState();
   expect(
-    account.setActive(subjectFor({ username: 'employee' }, true), false)
+    account.setActive(subjectFor({ kind: 'demo', username: 'employee' }, true), false)
       .updated,
   ).toBe(false);
   expect(account.setActive(null, false).updated).toBe(false);
@@ -42,7 +44,7 @@ it('prevents employee and anonymous account mutations', () => {
 });
 
 it('retains a disabled account on refresh and rejects login until admin reactivates it', async () => {
-  const admin = subjectFor({ username: 'admin' }, true);
+  const admin = subjectFor({ kind: 'demo', username: 'admin' }, true);
   const credentials = { username: 'employee', password: 'employee123456Aa@' };
   expect(useEmployeeAccountStore.getState().setActive(admin, false)).toEqual({
     updated: true,
@@ -54,7 +56,7 @@ it('retains a disabled account on refresh and rejects login until admin reactiva
   );
   expect(await authenticate({ ...credentials, password: 'wrong' })).toBeNull();
   useEmployeeAccountStore.getState().setActive(admin, true);
-  expect(await authenticate(credentials)).toEqual({ username: 'employee' });
+  expect(await authenticate(credentials)).toEqual({ kind: 'demo', username: 'employee' });
 });
 
 it('does not reactivate an account from malformed status data', () => {
@@ -75,7 +77,7 @@ it('restores employee identity without trusting an injected admin role', async (
   );
   const store = createAuthStore(localStorage);
   await store.getState().hydrate();
-  expect(store.getState().user).toEqual({ username: 'employee' });
+  expect(store.getState().user).toEqual({ kind: 'demo', username: 'employee' });
   expect(canAccess(subjectFor(store.getState().user, true), 'users')).toBe(
     false,
   );

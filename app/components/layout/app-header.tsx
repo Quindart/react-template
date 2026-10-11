@@ -84,7 +84,9 @@ export function AppHeader() {
             <p className="text-xs font-normal text-muted-foreground">
               Tài khoản
             </p>
-            <p className="truncate">{user?.username}</p>
+            <p className="truncate">
+              {user?.kind === 'google' ? user.name || user.email : user?.username}
+            </p>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem

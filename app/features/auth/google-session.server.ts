@@ -1,12 +1,9 @@
 import 'dotenv/config';
 import { createCookieSessionStorage } from 'react-router';
 
-export type GoogleIdentity = {
-  kind: 'google';
-  subject: string;
-  email: string;
-  name: string | null;
-};
+import type { GoogleAuthUser } from './auth-types';
+
+export type GoogleIdentity = GoogleAuthUser;
 
 export type GoogleOAuthFlow = {
   state: string;

@@ -72,7 +72,7 @@
 
 - [ ] **Step 6: Implement `google-session.server.ts`**
 
-  Use `createCookieSessionStorage` from `react-router`. Store only `provider`, `subject`, `email`, and `name`, use a seven-day session max age, and source secrets from `AUTH_SESSION_SECRET`. Keep OAuth flow state and app identity in separate cookies so an unfinished OAuth request cannot overwrite an active app session.
+  Use `createCookieSessionStorage` from `react-router`. Store only `kind`, `subject`, `email`, and `name`, use a seven-day session max age, and source secrets from `AUTH_SESSION_SECRET`. Keep OAuth flow state and app identity in separate cookies so an unfinished OAuth request cannot overwrite an active app session.
 
 - [ ] **Step 7: Run the focused service tests**
 
@@ -115,52 +115,57 @@
 
 **Files:**
 - Modify: `app/features/auth/auth-service.ts`
+- Create: `app/features/auth/auth-types.ts`
 - Modify: `app/features/auth/auth-store.ts`
 - Modify: `app/features/auth/session-bootstrap.tsx`
 - Modify: `app/features/auth/access-policy.ts`
 - Modify: `app/features/auth/use-logout.ts`
 - Modify: `app/features/auth/use-login.ts`
 - Modify: `app/routes.ts`
+- Modify: `app/routes/home.tsx`
 - Create: `app/routes/auth.session.tsx`
 - Test: `tests/unit/auth-store.test.ts`
+- Test: `tests/unit/auth.test.ts`
+- Test: `tests/unit/google-session-route.test.ts`
 - Test: `tests/unit/session-bootstrap.test.tsx`
+- Test: `tests/unit/session-revocation.test.tsx`
 - Test: `tests/unit/access-policy.test.ts`
 - Test: `tests/unit/use-login.test.tsx`
 - Test: `tests/unit/use-logout.test.tsx`
 
 **Interfaces:**
-- Extend `AuthUser` to a discriminated union: demo identities use `{ kind: 'demo'; username: 'admin' | 'employee' }`; Google identities use `GoogleIdentity` from Task 1.
+- Extend `AuthUser` in client-safe `auth-types.ts` to a discriminated union: demo identities use `{ kind: 'demo'; username: 'admin' | 'employee' }`; Google identities use `GoogleIdentity` from Task 1. Server-only modules import the type without making OAuth code client-reachable.
 - `GET /auth/session` returns `{ user: GoogleIdentity | null }` from the server cookie only; `POST /auth/session` destroys the Google cookie and returns `{ ok: true }`.
 - Change `AuthState.hydrate()` to restore local demo state without marking the app ready; add `finishHydration(googleIdentity: GoogleIdentity | null): void` to apply the server identity if present and only then release route guards.
 - `subjectFor()` maps demo admin to admin, demo employee to the existing fixture active state, and Google identity to active employee.
 
-- [ ] **Step 1: Add failing auth-store and policy tests**
+- [x] **Step 1: Add failing auth-store, auth-service, session route, revocation, and policy tests**
 
-  Cover valid Google identity persistence for UI state, malformed Google identity rejection, Google-to-employee policy, Google denial from Users, and unchanged admin/employee demo permissions.
+  Cover valid Google identity persistence for UI state, migration of existing `{ username }` demo sessions, malformed Google identity rejection, Google-to-employee policy, Google denial from Users, unchanged demo login, safe session route results, same-origin logout, and unchanged employee revocation.
 
-- [ ] **Step 2: Update `AuthUser` and auth-store validation**
+- [x] **Step 2: Update `AuthUser` and auth-store validation**
 
   Keep the versioned local storage envelope. Validate the discriminated union; do not trust any stored role. Demo roles remain derived in `access-policy.ts`. Google session claims from local storage are only a cache and are replaced by the server identity during bootstrap.
 
-- [ ] **Step 3: Add the `/auth/session` loader/action**
+- [x] **Step 3: Add the `/auth/session` loader/action**
 
   The loader returns only safe identity fields from `readGoogleIdentity`. The action accepts same-origin POST logout, calls `destroyGoogleSession`, and returns the clearing cookie header. No raw session cookie contents or OAuth tokens leave the server.
 
-- [ ] **Step 4: Coordinate local and server hydration**
+- [x] **Step 4: Coordinate local and server hydration**
 
   Update `SessionBootstrap` to await both local demo hydration and `GET /auth/session`, call `finishHydration` once both settle, and give a valid server Google identity precedence over persisted demo state. Preserve current employee-account revocation for the demo employee only.
 
-- [ ] **Step 5: Update access policy and its tests**
+- [x] **Step 5: Update access policy and its tests**
 
   Derive the role from `AuthUser.kind`; only the existing admin demo can access Users and update the employee fixture. All Google identities are active employee subjects.
 
-- [ ] **Step 6: Clear both session sources on logout and before a different demo login**
+- [x] **Step 6: Clear both session sources on logout and before a different demo login**
 
   Make `useLogout` POST to `/auth/session`, then clear Zustand and navigate to `/login`. If the request fails, keep the current UI session and show a retryable error so a surviving Google cookie cannot silently restore the user. Make successful demo authentication clear any Google cookie before persisting its demo identity; if the server clear request fails, do not create a conflicting demo session and show the generic retryable login error.
 
-- [ ] **Step 7: Run focused auth tests**
+- [x] **Step 7: Run focused auth tests**
 
-  Run: `pnpm test -- tests/unit/auth-store.test.ts tests/unit/session-bootstrap.test.tsx tests/unit/access-policy.test.ts tests/unit/use-login.test.tsx tests/unit/use-logout.test.tsx`
+  Run: `pnpm test -- tests/unit/auth-store.test.ts tests/unit/auth.test.ts tests/unit/google-session-route.test.ts tests/unit/session-bootstrap.test.tsx tests/unit/session-revocation.test.tsx tests/unit/access-policy.test.ts tests/unit/use-login.test.tsx tests/unit/use-logout.test.tsx`
 
   Expected: tests cover hydration precedence, logout clearing, switching providers, and unchanged demo behavior.
 

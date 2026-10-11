@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { PersistStorage, StateStorage } from 'zustand/middleware';
-import type { AuthUser } from './auth-service';
+import type { AuthUser, GoogleAuthUser } from './auth-types';
 import { createSafeStorage } from './auth-storage';
 
 type PersistedSession = { user: AuthUser | null };
@@ -14,15 +14,29 @@ export interface AuthState {
   signIn(user: AuthUser): PersistenceResult;
   signOut(): PersistenceResult;
   hydrate(): Promise<void>;
+  finishHydration(googleUser: GoogleAuthUser | null): void;
 }
 
 function allowedUser(value: unknown): AuthUser | null {
-  return typeof value === 'object' &&
-    value !== null &&
-    'username' in value &&
-    (value.username === 'admin' || value.username === 'employee')
-    ? { username: value.username }
-    : null;
+  if (typeof value !== 'object' || value === null) return null;
+  if ('kind' in value && value.kind === 'demo' && 'username' in value &&
+    (value.username === 'admin' || value.username === 'employee')) {
+    return { kind: 'demo', username: value.username };
+  }
+  // Version 1 sessions predate the discriminator and are known demo accounts.
+  if (!('kind' in value) && 'username' in value &&
+    (value.username === 'admin' || value.username === 'employee')) {
+    return { kind: 'demo', username: value.username };
+  }
+  if ('kind' in value && value.kind === 'google' && 'subject' in value &&
+    typeof value.subject === 'string' && value.subject.length > 0 &&
+    'email' in value && typeof value.email === 'string' && value.email.length > 0 &&
+    'name' in value && (typeof value.name === 'string' || value.name === null)) {
+    return {
+      kind: 'google', subject: value.subject, email: value.email, name: value.name,
+    };
+  }
+  return null;
 }
 
 export function createAuthStore(storage: StateStorage) {
@@ -91,18 +105,20 @@ export function createAuthStore(storage: StateStorage) {
           updateStatus({ storageError: !lastPersisted });
           return { persisted: lastPersisted };
         },
+        finishHydration(googleUser) {
+          const localUser = get().user;
+          const user = allowedUser(googleUser) ??
+            (localUser?.kind === 'demo' ? localUser : null);
+          persistSet({ user, hydrated: true });
+          updateStatus({ storageError: readFailed || !lastPersisted || storageUnavailable() });
+        },
         hydrate() {
           hydration ??= Promise.resolve()
             .then(() => persistApi.persist.rehydrate())
             .catch(() => {
               readFailed = true;
             })
-            .then(() => {
-              updateStatus({
-                hydrated: true,
-                storageError: readFailed || storageUnavailable(),
-              });
-            });
+            .then(() => updateStatus({ storageError: readFailed || storageUnavailable() }));
           return hydration;
         },
       }),

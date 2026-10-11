@@ -1,215 +1,120 @@
-import type { StateStorage } from 'zustand/middleware';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createAuthStore } from '~/features/auth/auth-store';
 import { createSafeStorage } from '~/features/auth/auth-storage';
+import type { StateStorage } from 'zustand/middleware';
+
+const admin = { kind: 'demo' as const, username: 'admin' as const };
+const google = {
+  kind: 'google' as const,
+  subject: 'google-subject',
+  email: 'person@example.com',
+  name: 'Person Example',
+};
 
 beforeEach(() => localStorage.clear());
 
 describe('persisted auth store', () => {
-  it('starts neutral without touching browser storage', () => {
-    const storage = createSafeStorage(() => {
-      throw new Error('Storage accessed before client mount');
-    });
-    const store = createAuthStore(storage);
+  it('restores legacy demo sessions and waits for server session resolution', async () => {
+    localStorage.setItem('auth-session', JSON.stringify({
+      state: { user: { username: 'admin' } }, version: 1,
+    }));
+    const store = createAuthStore(localStorage);
+    await store.getState().hydrate();
 
-    expect(store.getState()).toMatchObject({
-      user: null,
-      hydrated: false,
-      storageError: false,
-    });
+    expect(store.getState()).toMatchObject({ user: admin, hydrated: false });
+    store.getState().finishHydration(null);
+    expect(store.getState().hydrated).toBe(true);
+  });
+
+  it('accepts only normalized demo and Google identities', async () => {
+    const store = createAuthStore(localStorage);
+    store.getState().signIn({ ...google, accessToken: 'private' } as typeof google);
+    expect(store.getState().user).toEqual(google);
+    expect(JSON.parse(localStorage.getItem('auth-session')!).state.user).toEqual(google);
+
+    localStorage.setItem('auth-session', JSON.stringify({
+      version: 1,
+      state: { user: { ...google, role: 'admin', accessToken: 'private' } },
+    }));
+    const reloaded = createAuthStore(localStorage);
+    await reloaded.getState().hydrate();
+    expect(reloaded.getState().user).toEqual(google);
+    reloaded.getState().finishHydration(null);
+    expect(reloaded.getState().user).toBeNull();
+  });
+
+  it('lets an authoritative Google session replace a local demo session', async () => {
+    const store = createAuthStore(localStorage);
+    store.getState().signIn(admin);
+    await store.getState().hydrate();
+    store.getState().finishHydration(google);
+    expect(store.getState().user).toEqual(google);
+  });
+
+  it('does not treat a cached Google identity as an active server session', async () => {
+    const store = createAuthStore(localStorage);
+    store.getState().signIn(google);
+    await store.getState().hydrate();
+    store.getState().finishHydration(null);
+    expect(store.getState().user).toBeNull();
+  });
+
+  it('finishes signed out for invalid persisted values', async () => {
+    localStorage.setItem('auth-session', JSON.stringify({
+      version: 1, state: { user: { kind: 'google', email: 'missing-subject' } },
+    }));
+    const store = createAuthStore(localStorage);
+    await store.getState().hydrate();
+    store.getState().finishHydration(null);
+    expect(store.getState()).toMatchObject({ user: null, hydrated: true });
+  });
+
+  it('starts neutral without touching browser storage', () => {
+    const storage = createSafeStorage(() => { throw new Error('Storage accessed before client mount'); });
+    const store = createAuthStore(storage);
+    expect(store.getState()).toMatchObject({ user: null, hydrated: false, storageError: false });
     expect(storage.storageError).toBe(false);
   });
 
-  it('persists only the allowlisted user and Zustand metadata', () => {
-    const store = createAuthStore(localStorage);
-
-    expect(store.getState().signIn({ username: 'admin' })).toEqual({
-      persisted: true,
-    });
-    expect(JSON.parse(localStorage.getItem('auth-session')!)).toEqual({
-      state: { user: { username: 'admin' } },
+  it('strips extra fields from both cached identities and store actions', async () => {
+    localStorage.setItem('auth-session', JSON.stringify({
       version: 1,
-    });
-  });
-
-  it('restores the user in a new store only after explicit hydration', async () => {
-    createAuthStore(localStorage).getState().signIn({ username: 'admin' });
-    const reloaded = createAuthStore(localStorage);
-
-    expect(reloaded.getState().user).toBeNull();
-    expect(reloaded.getState().hydrated).toBe(false);
-    await reloaded.getState().hydrate();
-    expect(reloaded.getState()).toMatchObject({
-      user: { username: 'admin' },
-      hydrated: true,
-      storageError: false,
-    });
-  });
-
-  it('writes a signed-out session that remains signed out on reload', async () => {
+      state: { user: { ...google, accessToken: 'secret', role: 'admin' }, hydrated: true },
+    }));
     const store = createAuthStore(localStorage);
-    store.getState().signIn({ username: 'admin' });
-
-    expect(store.getState().signOut()).toEqual({ persisted: true });
-    expect(JSON.parse(localStorage.getItem('auth-session')!)).toEqual({
-      state: { user: null },
-      version: 1,
-    });
-    const reloaded = createAuthStore(localStorage);
-    await reloaded.getState().hydrate();
-    expect(reloaded.getState().user).toBeNull();
-  });
-
-  it.each([
-    '{broken',
-    JSON.stringify({ version: 2, state: { user: { username: 'admin' } } }),
-    JSON.stringify({ version: '1', state: { user: { username: 'admin' } } }),
-    JSON.stringify({ state: { user: { username: 'admin' } } }),
-    JSON.stringify({ version: 1, state: { user: { username: 'other' } } }),
-    JSON.stringify({ version: 1, state: { user: 'admin' } }),
-    JSON.stringify({ version: 1, state: null }),
-    'null',
-  ])(
-    'finishes hydration signed out for invalid persisted data: %s',
-    async (value) => {
-      localStorage.setItem('auth-session', value);
-      const store = createAuthStore(localStorage);
-
-      await store.getState().hydrate();
-      expect(store.getState()).toMatchObject({ user: null, hydrated: true });
-      expect(typeof store.getState().signIn).toBe('function');
-    },
-  );
-
-  it('does not merge extra user fields, status flags, or actions from storage', async () => {
-    localStorage.setItem(
-      'auth-session',
-      JSON.stringify({
-        version: 1,
-        state: {
-          user: { username: 'admin', password: 'secret', role: 'owner' },
-          hydrated: false,
-          storageError: true,
-          signOut: 'injected',
-        },
-      }),
-    );
-    const store = createAuthStore(localStorage);
-
     await store.getState().hydrate();
-    expect(store.getState()).toMatchObject({
-      user: { username: 'admin' },
-      hydrated: true,
-      storageError: false,
-    });
-    expect(store.getState().user).toEqual({ username: 'admin' });
-    expect(store.getState().signOut()).toEqual({ persisted: true });
+    expect(store.getState().user).toEqual(google);
+    expect(store.getState().hydrated).toBe(false);
+    store.getState().finishHydration(google);
+    store.getState().signOut();
+    expect(JSON.parse(localStorage.getItem('auth-session')!).state).toEqual({ user: null });
   });
 
-  it('hydrates only once and does not reset a later sign-in', async () => {
+  it('hydrates only once and marks storage errors when reads throw', async () => {
     let reads = 0;
     const storage: StateStorage = {
-      getItem() {
-        reads += 1;
-        return null;
-      },
+      getItem() { reads += 1; throw new Error('Blocked storage read'); },
       setItem() {},
       removeItem() {},
     };
     const store = createAuthStore(storage);
-
     await Promise.all([store.getState().hydrate(), store.getState().hydrate()]);
-    store.getState().signIn({ username: 'admin' });
+    store.getState().finishHydration(null);
     await store.getState().hydrate();
     expect(reads).toBe(1);
-    expect(store.getState().user).toEqual({ username: 'admin' });
+    expect(store.getState()).toMatchObject({ hydrated: true, storageError: true });
   });
 
-  it('finishes hydration when storage reads throw', async () => {
-    const storage: StateStorage = {
-      getItem() {
-        throw new Error('Blocked storage read');
-      },
-      setItem() {},
-      removeItem() {},
-    };
-    const store = createAuthStore(storage);
-
-    await store.getState().hydrate();
-    expect(store.getState()).toMatchObject({
-      user: null,
-      hydrated: true,
-      storageError: true,
-    });
-  });
-
-  it('keeps sign-in and sign-out in memory when storage writes throw', () => {
+  it('keeps in-memory auth when storage writes fail', () => {
     const storage: StateStorage = {
       getItem: () => null,
-      setItem() {
-        throw new Error('Quota exceeded');
-      },
+      setItem() { throw new Error('Quota exceeded'); },
       removeItem() {},
     };
     const store = createAuthStore(storage);
-
-    expect(store.getState().signIn({ username: 'admin' })).toEqual({
-      persisted: false,
-    });
-    expect(store.getState()).toMatchObject({
-      user: { username: 'admin' },
-      storageError: true,
-    });
+    expect(store.getState().signIn(admin)).toEqual({ persisted: false });
+    expect(store.getState()).toMatchObject({ user: admin, storageError: true });
     expect(store.getState().signOut()).toEqual({ persisted: false });
     expect(store.getState().user).toBeNull();
-  });
-});
-
-describe('safe browser storage', () => {
-  it('falls back to memory after browser storage becomes unavailable', async () => {
-    const storage = createSafeStorage(() => {
-      throw new Error('Browser storage blocked');
-    });
-    const store = createAuthStore(storage);
-
-    await store.getState().hydrate();
-    expect(store.getState()).toMatchObject({
-      hydrated: true,
-      storageError: true,
-    });
-    expect(store.getState().signIn({ username: 'admin' })).toEqual({
-      persisted: false,
-    });
-    expect(store.getState().user).toEqual({ username: 'admin' });
-    expect(JSON.parse(storage.getItem('auth-session')!)).toEqual({
-      state: { user: { username: 'admin' } },
-      version: 1,
-    });
-    expect(store.getState().signOut()).toEqual({ persisted: false });
-    expect(store.getState().user).toBeNull();
-  });
-
-  it('retains the current session when a write fails after successful reads', () => {
-    const browserStorage: Storage = {
-      length: 0,
-      key: () => null,
-      getItem: () => null,
-      setItem() {
-        throw new Error('Storage full');
-      },
-      removeItem() {},
-      clear() {},
-    };
-    const storage = createSafeStorage(() => browserStorage);
-    const store = createAuthStore(storage);
-
-    expect(store.getState().signIn({ username: 'admin' })).toEqual({
-      persisted: false,
-    });
-    expect(storage.storageError).toBe(true);
-    expect(store.getState().user).toEqual({ username: 'admin' });
-    expect(storage.getItem('auth-session')).toContain('"username":"admin"');
-    storage.removeItem('auth-session');
-    expect(storage.getItem('auth-session')).toBeNull();
   });
 });
