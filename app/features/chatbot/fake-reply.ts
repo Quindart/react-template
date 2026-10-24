@@ -4,6 +4,9 @@ export const quickQuestions = [
   'Doanh thu 6 tháng thế nào?',
   'Tình hình đơn hàng ra sao?',
   'Khách hàng quay lại có tăng không?',
+  'Mở trang quản lý người dùng',
+  'Tìm người dùng Nguyễn Minh Anh',
+  'Xuất Excel danh sách người dùng',
 ];
 
 export function getFakeReply(question: string, attachmentNames: string[]) {
