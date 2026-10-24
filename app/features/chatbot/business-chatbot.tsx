@@ -1,11 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  ArrowUpRight,
-  ChartNoAxesCombined,
-  FileText,
-  MessageCircle,
-  Sparkles,
-} from 'lucide-react';
+import { useNavigate } from 'react-router';
+import { ArrowUpRight, ChartNoAxesCombined, FileText } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import {
   Sheet,
@@ -15,6 +10,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '~/components/ui/sheet';
+import { canAccess, subjectFor } from '~/features/auth/access-policy';
+import { useAuthStore } from '~/features/auth/auth-store';
+import { useEmployeeAccountStore } from '~/features/auth/employee-account-store';
+import { queryUsers } from '~/features/users/user-query';
+import { directoryUsers, type UserRecord } from '~/features/users/user-data';
+import { AssistantAvatar, type AssistantMood } from './assistant-avatar';
+import { parseAssistantIntent } from './assistant-intent';
 import { ChatComposer, type ChatAttachment } from './chat-composer';
 import { getFakeReply, quickQuestions } from './fake-reply';
 
@@ -26,11 +28,17 @@ type ChatMessage = {
 };
 
 export function BusinessChatbot() {
+  const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
+  const employeeActive = useEmployeeAccountStore((state) => state.active);
+  const subject = subjectFor(user, employeeActive);
+  const canManageUsers = canAccess(subject, 'users');
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState('');
   const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
   const [pending, setPending] = useState(false);
+  const [mood, setMood] = useState<AssistantMood>('idle');
   const nextId = useRef(0);
   const replyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
@@ -60,19 +68,82 @@ export function BusinessChatbot() {
       { id, role: 'user', text: trimmed, attachments: files },
     ]);
     setPending(true);
+    setMood('thinking');
     replyTimer.current = setTimeout(() => {
-      const answer = getFakeReply(
+      void respond(
         trimmed,
         files.map((file) => file.name),
       );
-      const id = ++nextId.current;
-      setMessages((current) => [
-        ...current,
-        { id, role: 'assistant', text: answer, attachments: [] },
-      ]);
+    }, 450);
+  }
+
+  async function respond(question: string, attachmentNames: string[]) {
+    const intent = parseAssistantIntent(question);
+    let answer: string;
+
+    if (intent.type === 'home') {
+      await navigate('/home');
+      answer = 'Mình đã mở trang chủ để bạn xem tổng quan và biểu đồ.';
+    } else if (intent.type === 'users') {
+      if (!canManageUsers) {
+        answer =
+          'Tài khoản hiện tại không có quyền mở trang quản lý người dùng.';
+      } else {
+        await navigate('/users');
+        answer =
+          'Mình đã mở danh sách người dùng. Bạn có thể yêu cầu tìm theo tên, email, số điện thoại hoặc mã.';
+      }
+    } else if (intent.type === 'search-users') {
+      if (!canManageUsers) {
+        answer = 'Tài khoản hiện tại không có quyền tìm kiếm người dùng.';
+      } else {
+        const params = new URLSearchParams({ page: '1', limit: '10' });
+        if (intent.query) params.set('search_key', intent.query);
+        await navigate(`/users?${params.toString()}`);
+        answer = intent.query
+          ? `Mình đã tìm người dùng theo “${intent.query}” và mở kết quả trên trang quản lý.`
+          : 'Mình đã mở danh sách người dùng.';
+      }
+    } else if (intent.type === 'export-users') {
+      if (!canManageUsers) {
+        answer = 'Tài khoản hiện tại không có quyền xuất danh sách người dùng.';
+      } else {
+        const params = new URLSearchParams();
+        if (intent.query) params.set('search_key', intent.query);
+        const { filtered } = queryUsers(params);
+        const rows = filtered.map((record) =>
+          record.username === 'employee'
+            ? { ...record, status: employeeActive ? 'Hoạt động' : 'Tạm khóa' }
+            : record,
+        ) as UserRecord[];
+        if (!rows.length) {
+          answer = `Không có người dùng nào${intent.query ? ` khớp với “${intent.query}”` : ''} để xuất.`;
+        } else
+          try {
+            const { exportUsers } =
+              await import('~/features/users/export-users');
+            await exportUsers(rows);
+            answer = `Đã xuất ${rows.length} người dùng${intent.query ? ` khớp với “${intent.query}”` : ''} thành file Excel.`;
+          } catch {
+            answer =
+              'Mình chưa thể tạo file Excel lúc này. Hãy mở trang quản lý người dùng và thử nút Xuất Excel.';
+          }
+      }
+    } else {
+      answer = getFakeReply(question, attachmentNames);
+    }
+
+    const id = ++nextId.current;
+    setMessages((current) => [
+      ...current,
+      { id, role: 'assistant', text: answer, attachments: [] },
+    ]);
+    setMood('speaking');
+    replyTimer.current = setTimeout(() => {
       replyTimer.current = null;
       setPending(false);
-    }, 700);
+      setMood('idle');
+    }, 900);
   }
 
   function sendDraft() {
@@ -92,7 +163,7 @@ export function BusinessChatbot() {
           title="Trợ lý kinh doanh"
           className="fixed bottom-6 right-6 z-30 size-14 rounded-full bg-indigo-600 text-white shadow-lg shadow-indigo-600/25 transition-transform hover:scale-105 hover:bg-indigo-700 motion-reduce:transform-none"
         >
-          <MessageCircle aria-hidden="true" className="!size-6" />
+          <AssistantAvatar mood={mood} className="size-12" />
         </Button>
       </SheetTrigger>
       <SheetContent
@@ -101,11 +172,11 @@ export function BusinessChatbot() {
       >
         <SheetHeader className="shrink-0 border-b p-5 pr-12 text-left">
           <SheetTitle className="flex items-center gap-2 text-base">
-            <Sparkles aria-hidden="true" className="size-4 text-indigo-600" />
+            <AssistantAvatar mood={mood} className="size-11" />
             Trợ lý kinh doanh
           </SheetTitle>
           <SheetDescription className="text-xs">
-            Khám phá số liệu · Chatbot demo
+            Hỏi số liệu hoặc yêu cầu bot điều khiển dashboard
           </SheetDescription>
         </SheetHeader>
 
@@ -122,7 +193,8 @@ export function BusinessChatbot() {
                 Phân tích kết quả kinh doanh với chatbot
               </h2>
               <p className="mt-2 max-w-64 text-center text-sm leading-6 text-muted-foreground">
-                Bắt đầu bằng một câu hỏi hoặc chọn gợi ý bên dưới.
+                Mình có thể trả lời số liệu mẫu, mở trang, tìm người dùng và
+                xuất danh sách nếu tài khoản của bạn có quyền.
               </p>
               <div className="mt-5 w-full space-y-2">
                 {quickQuestions.map((question) => (
