@@ -1,4 +1,4 @@
-import { Home, PanelsTopLeft, Users } from 'lucide-react';
+import { Home, MapPinned, PanelsTopLeft, Users } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router';
 import { useAuthStore } from '~/features/auth/auth-store';
 import { useEmployeeAccountStore } from '~/features/auth/employee-account-store';
@@ -59,6 +59,18 @@ export function AppSidebar() {
                     >
                       <Home aria-hidden="true" />
                       <span>Trang chủ</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === '/city'}
+                    tooltip="Tăng trưởng thành phố"
+                  >
+                    <NavLink to="/city" onClick={() => setOpenMobile(false)}>
+                      <MapPinned aria-hidden="true" />
+                      <span>Tăng trưởng thành phố</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

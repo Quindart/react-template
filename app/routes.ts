@@ -12,6 +12,7 @@ export default [
   route('auth/session', 'routes/auth.session.tsx'),
   layout('routes/workspace.tsx', [
     route('home', 'routes/home.tsx'),
+    route('city', 'routes/city.tsx'),
     route('users', 'routes/users.tsx'),
   ]),
 ] satisfies RouteConfig;
