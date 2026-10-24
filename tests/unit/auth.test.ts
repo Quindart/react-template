@@ -42,12 +42,12 @@ describe('authenticate', () => {
         username: 'employee',
         password: 'employee123456Aa@',
       }),
-    ).toEqual({ username: 'employee' });
+    ).toEqual({ kind: 'demo', username: 'employee' });
   });
   it('returns the demo user for exact credentials', async () => {
     expect(
       await authenticate({ username: 'admin', password: 'admin123456Aa@' }),
-    ).toEqual({ username: 'admin' });
+    ).toEqual({ kind: 'demo', username: 'admin' });
   });
 
   it.each([

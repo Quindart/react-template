@@ -1,4 +1,4 @@
-import type { AuthUser } from './auth-service';
+import type { AuthUser } from './auth-types';
 
 export type Subject = { role: 'admin' | 'employee'; active: boolean };
 export type Resource = 'home' | 'users' | 'employee-account';
@@ -9,8 +9,9 @@ export function subjectFor(
   user: AuthUser | null,
   employeeActive: boolean,
 ): Subject | null {
-  if (user?.username === 'admin') return { role: 'admin', active: true };
-  if (user?.username === 'employee')
+  if (user?.kind === 'google') return { role: 'employee', active: true };
+  if (user?.kind === 'demo' && user.username === 'admin') return { role: 'admin', active: true };
+  if (user?.kind === 'demo' && user.username === 'employee')
     return { role: 'employee', active: employeeActive };
   return null;
 }

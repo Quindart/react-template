@@ -55,6 +55,31 @@ Authentication and permissions are a browser-only demo, not server authorization
 Account status is local to each browser; a production app needs server-side account
 storage, authentication and authorization on every protected loader/API.
 
+### Google login prototype
+
+The login page also offers **Tiếp tục với Google**. Google OAuth is a real server-side
+authorization-code flow; Google identities are treated as active employees and can
+open Home only. Dashboard content and the current client-side route guards remain
+prototype behavior, so this is not production authorization.
+
+To enable Google login locally:
+
+1. Create or select a project in [Google Cloud Console](https://console.cloud.google.com/).
+2. Configure the OAuth consent screen and add a test user if the app is in testing mode.
+3. Under **APIs & Services → Credentials**, create an OAuth client with application
+   type **Web application**. Add this exact authorized redirect URI:
+   `http://localhost:5173/auth/google/callback`.
+4. Copy `.env.example` to `.env` and fill in the client ID and client secret. Generate
+   `AUTH_SESSION_SECRET` with `openssl rand -base64 32`.
+5. Run `pnpm dev` and select **Tiếp tục với Google** on `/login`.
+
+The redirect URI in `GOOGLE_REDIRECT_URI` must exactly match the URI registered in
+Google Cloud, including scheme and path. Register the corresponding HTTPS callback
+for each deployed hostname. This prototype requests only `openid email profile` and
+does not request Google API access. Keep `.env` and client secrets out of source
+control and configure production values in the deployment's server environment.
+OAuth setup and redirect URI requirements are described in [Google's web server OAuth guide](https://developers.google.com/identity/protocols/oauth2/web-server).
+
 After signing in, open **Quản lý người dùng** in the sidebar or visit `/users`.
 The table contains the employee login account and 100 deterministic fake users. Submit the search form to filter
 by name (with or without Vietnamese accents), phone, email, or user ID.

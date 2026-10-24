@@ -15,6 +15,20 @@ test('empty form validates without creating a session', async ({ page }) => {
   ).toBeNull();
 });
 
+test('Google option is keyboard accessible and callback errors stay generic', async ({ page }) => {
+  await page.goto('/login');
+  const google = page.getByRole('link', { name: 'Tiếp tục với Google' });
+  await expect(google).toHaveAttribute('href', '/auth/google');
+  await google.focus();
+  await expect(google).toBeFocused();
+  await page.goto('/login?auth_error=google');
+  await expect(page.getByRole('alert')).toHaveText(
+    'Không thể đăng nhập bằng Google lúc này. Vui lòng thử lại.',
+  );
+  await page.goto('/login?auth_error=provider-secret');
+  await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
 for (const path of ['/', '/home']) {
   test(`guest ${path} redirects without exposing home`, async ({ page }) => {
     await page.addInitScript(() => {
@@ -89,7 +103,7 @@ test('success persists exact session, reloads, shares tabs and guards login', as
     await page.evaluate(() =>
       JSON.parse(localStorage.getItem('auth-session')!),
     ),
-  ).toEqual({ state: { user: { username: 'admin' } }, version: 1 });
+  ).toEqual({ state: { user: { kind: 'demo', username: 'admin' } }, version: 1 });
   const viewport = page.viewportSize()!;
   await expect
     .poll(async () => {

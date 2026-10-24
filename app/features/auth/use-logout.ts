@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useSnackbar } from 'notistack';
 import { useAuthStore } from './auth-store';
+import { AUTH_MESSAGES } from './auth-messages';
 
 export function useLogout() {
   const navigate = useNavigate();
@@ -12,6 +13,23 @@ export function useLogout() {
     if (locked.current) return;
     locked.current = true;
     setPending(true);
+    try {
+      const response = await fetch('/auth/session', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ intent: 'clear' }),
+      });
+      if (!response.ok) throw new Error('Could not revoke server session');
+    } catch {
+      enqueueSnackbar(AUTH_MESSAGES.logoutError, {
+        variant: 'error',
+        autoHideDuration: 6000,
+      });
+      locked.current = false;
+      setPending(false);
+      return;
+    }
     const { persisted } = useAuthStore.getState().signOut();
     enqueueSnackbar(
       persisted

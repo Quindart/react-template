@@ -84,8 +84,9 @@ function fillAndSubmit(password = 'admin123456Aa@') {
 beforeEach(() => {
   vi.clearAllMocks();
   localStorage.clear();
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ ok: true })));
   useAuthStore.setState({ user: null, hydrated: true, storageError: false });
-  mocks.authenticate.mockResolvedValue({ username: 'admin' });
+  mocks.authenticate.mockResolvedValue({ kind: 'demo', username: 'admin' });
   mocks.navigate.mockResolvedValue(undefined);
 });
 
@@ -107,7 +108,7 @@ describe('useLogin', () => {
   });
 
   it('locks repeated submits across authentication and navigation, saves and notifies once', async () => {
-    const auth = deferred<{ username: 'admin' } | null>();
+    const auth = deferred<{ kind: 'demo'; username: 'admin' } | null>();
     const navigation = deferred<void>();
     mocks.authenticate.mockReturnValue(auth.promise);
     mocks.navigate.mockReturnValue(navigation.promise);
@@ -123,7 +124,7 @@ describe('useLogin', () => {
     expect(screen.getByTestId('phase')).toHaveTextContent('submitting');
     expect(screen.getByLabelText('password')).toBeDisabled();
     await act(async () => {
-      auth.resolve({ username: 'admin' });
+      auth.resolve({ kind: 'demo', username: 'admin' });
     });
     expect(screen.getByTestId('phase')).toHaveTextContent('redirecting');
     fireEvent.submit(screen.getByRole('form'));
@@ -164,7 +165,7 @@ describe('useLogin', () => {
     expect(screen.getByTestId('error')).toBeEmptyDOMElement();
     fireEvent.submit(screen.getByRole('form'));
     await waitFor(() => expect(mocks.navigate).toHaveBeenCalledTimes(1));
-    expect(useAuthStore.getState().user).toEqual({ username: 'admin' });
+    expect(useAuthStore.getState().user).toEqual({ kind: 'demo', username: 'admin' });
   });
 
   it('ends pending with safe generic feedback when authentication rejects', async () => {
@@ -181,6 +182,15 @@ describe('useLogin', () => {
     expect(mocks.navigate).not.toHaveBeenCalled();
   });
 
+  it('does not sign in a demo user when clearing the Google session fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+    render(<LoginHarness />);
+    fillAndSubmit();
+    await waitFor(() => expect(screen.getByTestId('error')).toHaveTextContent(AUTH_MESSAGES.loginError));
+    expect(useAuthStore.getState().user).toBeNull();
+    expect(mocks.navigate).not.toHaveBeenCalled();
+  });
+
   it('keeps the session on failed navigation and retries without reauthenticating', async () => {
     mocks.navigate.mockRejectedValueOnce(new Error('route unavailable'));
     render(<LoginHarness />);
@@ -191,7 +201,7 @@ describe('useLogin', () => {
       ),
     );
     expect(screen.getByTestId('phase')).toHaveTextContent('idle');
-    expect(useAuthStore.getState().user).toEqual({ username: 'admin' });
+    expect(useAuthStore.getState().user).toEqual({ kind: 'demo', username: 'admin' });
     expect(screen.getByTestId('navigation-error')).toHaveTextContent('true');
     const retry = deferred<void>();
     mocks.navigate.mockReturnValueOnce(retry.promise);
@@ -214,7 +224,7 @@ describe('useLogin', () => {
     render(<LoginHarness />);
     fillAndSubmit();
     await waitFor(() => expect(mocks.navigate).toHaveBeenCalledTimes(1));
-    expect(useAuthStore.getState().user).toEqual({ username: 'admin' });
+    expect(useAuthStore.getState().user).toEqual({ kind: 'demo', username: 'admin' });
     expect(mocks.enqueueSnackbar).toHaveBeenCalledTimes(1);
     expect(mocks.enqueueSnackbar).toHaveBeenCalledWith(
       AUTH_MESSAGES.persistenceWarning,
@@ -234,13 +244,13 @@ describe('useLogout', () => {
   }
 
   it('clears the session, writes null, and blocks repeats until navigation completes', async () => {
-    useAuthStore.getState().signIn({ username: 'admin' });
+    useAuthStore.getState().signIn({ kind: 'demo', username: 'admin' });
     const navigation = deferred<void>();
     mocks.navigate.mockReturnValue(navigation.promise);
     render(<LogoutHarness />);
     fireEvent.click(screen.getByRole('button'));
     fireEvent.click(screen.getByRole('button'));
-    expect(useAuthStore.getState().user).toBeNull();
+    await waitFor(() => expect(useAuthStore.getState().user).toBeNull());
     expect(
       JSON.parse(localStorage.getItem('auth-session')!).state.user,
     ).toBeNull();
@@ -254,7 +264,7 @@ describe('useLogout', () => {
   });
 
   it('clears memory and shows warning only if storage cannot record logout', async () => {
-    useAuthStore.getState().signIn({ username: 'admin' });
+    useAuthStore.getState().signIn({ kind: 'demo', username: 'admin' });
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('blocked');
     });
@@ -270,7 +280,7 @@ describe('useLogout', () => {
   });
 
   it('keeps the session cleared and releases pending when logout navigation fails', async () => {
-    useAuthStore.getState().signIn({ username: 'admin' });
+    useAuthStore.getState().signIn({ kind: 'demo', username: 'admin' });
     mocks.navigate.mockRejectedValueOnce(new Error('route unavailable'));
     render(<LogoutHarness />);
     fireEvent.click(screen.getByRole('button'));

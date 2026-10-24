@@ -52,6 +52,9 @@ const metrics = [
 
 export default function Home() {
   const user = useAuthStore((state) => state.user);
+  const displayName = user?.kind === 'google'
+    ? user.name || user.email
+    : user?.username;
   return (
     <section
       aria-label="Trang chủ"
@@ -63,7 +66,7 @@ export default function Home() {
             Tổng quan hoạt động
           </p>
           <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
-            Xin chào, {user?.username}!
+            Xin chào, {displayName}!
           </h1>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
             Theo dõi các chỉ số và khám phá câu chuyện phía sau dữ liệu.

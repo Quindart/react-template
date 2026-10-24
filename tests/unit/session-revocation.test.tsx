@@ -1,5 +1,5 @@
 import { act, render, waitFor } from '@testing-library/react';
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import { useAuthStore } from '~/features/auth/auth-store';
 import { SessionBootstrap } from '~/features/auth/session-bootstrap';
 import {
@@ -14,10 +14,11 @@ it('revokes a session when a queued disable event arrives after reactivation', a
     JSON.stringify({ version: 1, active: true }),
   );
   useEmployeeAccountStore.getState().refresh();
-  useAuthStore.getState().signIn({ username: 'employee' });
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ user: null })));
+  useAuthStore.getState().signIn({ kind: 'demo', username: 'employee' });
   render(<SessionBootstrap />);
   await waitFor(() => expect(useAuthStore.getState().hydrated).toBe(true));
-  expect(useAuthStore.getState().user?.username).toBe('employee');
+  expect(useAuthStore.getState().user).toEqual({ kind: 'demo', username: 'employee' });
   act(() =>
     window.dispatchEvent(
       new StorageEvent('storage', {
